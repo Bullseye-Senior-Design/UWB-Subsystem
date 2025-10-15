@@ -236,8 +236,7 @@ class DWM1001Manager:
             logger.error(f"Error getting node info: {e}")
             return {}
     
-    def start_continuous_reading(self, interval: float = 0.1, 
-                                save_to_csv: bool = False, csv_filename: str = "position_data.csv"):
+    def start_continuous_reading(self, interval: float = 0.1, csv_filename: str = "position_data.csv"):
         """
         Start continuous position reading in a separate thread
         
@@ -264,10 +263,8 @@ class DWM1001Manager:
         self.read_thread = threading.Thread(target=read_loop, daemon=True)
         self.read_thread.start()
         
-        if save_to_csv:
-            logger.info(f"Started continuous position reading with CSV logging to {csv_filename}")
-        else:
-            logger.info("Started continuous position reading")
+        
+        logger.info("Started continuous position reading")
     
     def save_position_to_csv(self, position: Position, filename: str = "position_data.csv") -> bool:
         """
@@ -417,7 +414,7 @@ def main():
     except Exception as e:
         logger.error(f"Unexpected error: {e}")
     finally:
-        reader.disconnect()
+        manager.disconnect()
         print("Program terminated")
 
 if __name__ == "__main__":
