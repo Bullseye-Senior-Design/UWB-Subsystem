@@ -257,7 +257,7 @@ class DWM1001Manager:
                     self.save_position_to_csv(position, csv_filename)
                     
                     # Call user callback
-                    self.position_callback(position)
+                    self.print_position(position)
                 time.sleep(interval) # TODO check if needed
         
         self.read_thread = threading.Thread(target=read_loop, daemon=True)
