@@ -343,7 +343,7 @@ class DWM1001Manager:
             self.read_thread.join()
         logger.info("Stopped continuous position reading")
 
-    def print_position(position: Position):
+    def print_position(self, position: Position):
         """
         Callback function to handle new position data
         
