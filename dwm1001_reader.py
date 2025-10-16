@@ -369,7 +369,7 @@ def main():
     print(f"using com: {COM_PORT}")
 
     BAUDRATE = 115200
-    filename = f"positions/{datetime.fromtimestamp(time.time()).isoformat()}position_data.csv"
+    filename = f"positions/{str(datetime.now()).replace(':',".")}position_data.csv"
     
     # Create reader instance
     manager = DWM1001Manager(port=COM_PORT, baudrate=BAUDRATE)
