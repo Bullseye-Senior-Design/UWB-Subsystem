@@ -3,6 +3,8 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# ignore positions folder
+positions/
 
 # C extensions
 *.so
