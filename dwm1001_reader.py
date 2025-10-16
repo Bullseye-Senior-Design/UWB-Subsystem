@@ -20,6 +20,7 @@ import time
 import json
 import struct
 import threading
+import sys
 import csv
 import os
 from dataclasses import dataclass
@@ -92,11 +93,12 @@ class DWM1001Manager:
             time.sleep(2)
             
             # Test connection by sending shell command
-            self.serial_connection.write(b'\r\n')
-            time.sleep(0.1)
+            self.serial_connection.write(b'\r')
+            time.sleep(0.5)
+            self.serial_connection.write(b'\r')
             
             # Enter shell mode
-            self.serial_connection.write(b'shell\r\n')
+            #self.serial_connection.write(b'shell\r\n')
             time.sleep(0.5)
             
             self.is_connected = True
@@ -133,12 +135,9 @@ class DWM1001Manager:
             return None
         
         try:
-            # Send position request command
-            self.serial_connection.write(b'lep\r\n')  # Location Engine Position
-            time.sleep(0.1) # TODO check if needed
-            
-            # Read response
-            response = self.serial_connection.read_until(b'\n').decode('utf-8', errors='ignore').strip()
+            line = self.serial_connection.readline()    
+
+            response = line.decode('utf-8', errors='ignore').strip()    
             
             # Parse position data
             # Expected format: "POS,x,y,z,quality"
@@ -202,10 +201,9 @@ class DWM1001Manager:
         
         try:
             # Get node ID
-            self.serial_connection.write(b'si\r\n')  # System Info
-            time.sleep(0.1)
-            response = self.serial_connection.read_until(b'\n').decode('utf-8', errors='ignore').strip()
-            
+            self.serial_connection.write(b'si\r')  # System Info
+            time.sleep(1)
+            response = self.serial_connection.readline().decode('utf-8', errors='ignore').strip()
             # Parse system info
             if 'node_id' in response.lower():
                 # Extract node ID from response
@@ -217,9 +215,9 @@ class DWM1001Manager:
                         break
             
             # Get update rate
-            self.serial_connection.write(b'pur\r\n')  # Position Update Rate
-            time.sleep(0.1)
-            response = self.serial_connection.read_until(b'\n').decode('utf-8', errors='ignore').strip()
+            self.serial_connection.write(b'pur\r')  # Position Update Rate
+            time.sleep(1)
+            response = self.serial_connection.readline().decode('utf-8', errors='ignore').strip()
             
             if 'upd' in response.lower():
                 # Parse update rate
@@ -246,7 +244,10 @@ class DWM1001Manager:
             return
         
         self.is_reading = True
-        
+        self.serial_connection.reset_input_buffer()
+        self.serial_connection.write(b'lep\r')  # Location Engine Position
+        time.sleep(1)
+
         def read_loop():
             while self.is_reading:
                 position = self.get_position()
@@ -283,7 +284,7 @@ class DWM1001Manager:
             
             # Open file in append mode
             with open(filename, 'a', newline='') as csvfile:
-                fieldnames = ['timestamp', 'datetime', 'x', 'y', 'z', 'quality']
+                fieldnames = ['datetime', 'x', 'y', 'z', 'quality']
                 writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
                 
                 # Write header if file is new
@@ -293,7 +294,6 @@ class DWM1001Manager:
                 
                 # Write position data
                 writer.writerow({
-                    'timestamp': position.timestamp,
                     'datetime': datetime.fromtimestamp(position.timestamp).isoformat(),
                     'x': position.x,
                     'y': position.y,
@@ -361,9 +361,15 @@ def main():
     print("=" * 40)
     
     # Configuration
-    COM_PORT = 'COM3'  # Change this to your actual COM port
+    try:
+        COM_PORT = sys.argv[1]
+    except Exception as e:
+        COM_PORT = '/dev/ttyACM0' 
+
+    print(f"using com: {COM_PORT}")
+
     BAUDRATE = 115200
-    filename = "position_data.csv"
+    filename = f"positions/{datetime.fromtimestamp(time.time()).isoformat()}position_data.csv"
     
     # Create reader instance
     manager = DWM1001Manager(port=COM_PORT, baudrate=BAUDRATE)
@@ -389,15 +395,6 @@ def main():
         if info:
             print(f"Node ID: {info.get('node_id', 'Unknown')}")
             print(f"Update Rate: {info.get('update_rate', 'Unknown')} Hz")
-        
-        # Get single position reading
-        print("\nGetting position...")
-        position = manager.get_position()
-        if position:
-            manager.print_position(position)
-        else:
-            print("No position data available")
-            print("Make sure the tag is part of a RTLS network with anchors")
         
         # Start continuous reading
         print("\nStarting continuous position reading (Press Ctrl+C to stop)...")
