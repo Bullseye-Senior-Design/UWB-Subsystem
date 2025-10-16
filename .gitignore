@@ -4,7 +4,6 @@ __pycache__/
 *$py.class
 
 # ignore positions folder
-positions/
 
 # C extensions
 *.so
