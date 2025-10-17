@@ -5,6 +5,17 @@ A Python program to read position data from Decawave DWM1001-DEV Ultra-Wideband 
 # ssh commands
 ip address to ssh to: 100.71.52.88
 
+Run to find com port
+```bash
+bash find_com_port.sh
+```
+
+Run to listen for position data with the com port passed as an argument
+```bash
+bash uwb_listener.sh [com_port]
+```
+
+The bash files runs these commands
 cd Desktop/Code/UWB-Subsytem
 source .venv/bin/activate
 python com_port_finder.py
