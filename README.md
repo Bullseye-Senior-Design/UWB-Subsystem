@@ -4,6 +4,7 @@ A Python program to read position data from Decawave DWM1001-DEV Ultra-Wideband 
 
 # ssh commands
 ip address to ssh to: 100.71.52.88
+static ip address to ssh to: 192.168.1.1
 
 Run to find com port
 ```bash
