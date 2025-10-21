@@ -244,6 +244,10 @@ class DWM1001Manager:
             return
         
         self.is_reading = True
+        if not self.serial_connection:
+            logger.error("Serial connection not established")
+            return
+        
         self.serial_connection.reset_input_buffer()
         self.serial_connection.write(b'lep\r')  # Location Engine Position
         time.sleep(1)
