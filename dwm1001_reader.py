@@ -294,7 +294,7 @@ class DWM1001Manager:
                 
                 # Write position data
                 writer.writerow({
-                    'datetime': datetime.fromtimestamp(position.timestamp).isoformat(),
+                    'datetime': datetime.fromtimestamp(position.timestamp).now().strftime('%H:%M:%S'),
                     'x': position.x,
                     'y': position.y,
                     'z': position.z,
@@ -325,7 +325,7 @@ class DWM1001Manager:
             
             # Create new file with headers only
             with open(filename, 'w', newline='') as csvfile:
-                fieldnames = ['timestamp', 'datetime', 'x', 'y', 'z', 'quality']
+                fieldnames = ['datetime', 'x', 'y', 'z', 'quality']
                 writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
                 writer.writeheader()
                 logger.info(f"Created fresh CSV file with headers: {filename}")
@@ -398,7 +398,7 @@ def main():
         
         # Start continuous reading
         print("\nStarting continuous position reading (Press Ctrl+C to stop)...")
-        manager.start_continuous_reading(interval=0.1, csv_filename=filename)
+        manager.start_continuous_reading(interval=0.0, csv_filename=filename)
         
         # Keep the program running
         while True:
