@@ -63,21 +63,12 @@ class ProximitySensorReader:
 		# raw_state is 0 or 1
 		return raw_state == (1 if self.active_high else 0)
 
-	def _edge_matches(self, old: int, new: int) -> bool:
-		if self.edge == 'both':
-			return old != new
-		if self.edge == 'rising':
-			return old == 0 and new == 1
-		if self.edge == 'falling':
-			return old == 1 and new == 0
-		return False
-
 	def _gpio_callback(self, channel):
 		now = time.time()
-		with self._lock:
-			if (now - self._last_event_time) * 1000.0 < self.debounce_ms:
-				return
-			self._last_event_time = now
+		# with self._lock:
+		# 	if (now - self._last_event_time) * 1000.0 < self.debounce_ms:
+		# 		return
+		# 	self._last_event_time = now
 
 		try:
 			raw = GPIO.input(self.pin)
@@ -127,11 +118,11 @@ class ProximitySensorReader:
 
 def main():
 
-	reader = ProximitySensorReader(pin=7,
+	reader = ProximitySensorReader(pin=4,
 								   active_high=True,
 								   pull_up=True,
-								   debounce_ms=50,
-								   edge='both')
+								   debounce_ms=9,
+								   edge='rising')
 	try:
 		reader.start()
 
