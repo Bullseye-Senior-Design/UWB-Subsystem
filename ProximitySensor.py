@@ -55,7 +55,8 @@ class ProximitySensorReader:
 
 		self._running = False
 		self._lock = threading.Lock()
-		self._last_event_time = 0.0
+
+		self._count = 0
 
 		# internal history for optional export
 
@@ -64,24 +65,13 @@ class ProximitySensorReader:
 		return raw_state == (1 if self.active_high else 0)
 
 	def _gpio_callback(self, channel):
-		now = time.time()
-		# with self._lock:
-		# 	if (now - self._last_event_time) * 1000.0 < self.debounce_ms:
-		# 		return
-		# 	self._last_event_time = now
-
-		try:
-			raw = GPIO.input(self.pin)
-		except Exception as e:
-			logger.error(f"GPIO read failed in callback: {e}")
-			return
-
-		present = self._normalize_present(raw)
-		ts = now
-		logger.info(f"Event: present={present} raw={raw} time={datetime.fromtimestamp(ts).isoformat()}")
+		# Keep callback extremely small: increment count only.
+		with self._lock:
+			self._count += 1
 
 	def start(self):
 		"""Start monitoring the GPIO pin"""
+		self._running = True
 
 		GPIO.setmode(GPIO.BCM)
 
@@ -116,18 +106,29 @@ class ProximitySensorReader:
 			except Exception:
 				pass
 
+	def get_count_and_reset(self) -> int:
+		"""Return the number of callbacks since last reset and reset the counter."""
+		with self._lock:
+			c = self._count
+			self._count = 0
+		return c
+
 def main():
 
 	reader = ProximitySensorReader(pin=4,
 								   active_high=True,
 								   pull_up=True,
-								   debounce_ms=9,
+								   debounce_ms=1,
 								   edge='rising')
 	try:
 		reader.start()
-
-
-		time.sleep(100)
+		# measure frequency every second
+		interval = 1.0
+		while True:
+			time.sleep(interval)
+			count = reader.get_count_and_reset()
+			freq = count / interval
+			logger.info(f"Measured frequency: {freq:.2f} Hz ({count} counts in {interval}s)")
 
 	except KeyboardInterrupt:
 		logger.info("Interrupted by user")
