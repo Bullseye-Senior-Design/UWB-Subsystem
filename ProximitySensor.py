@@ -123,7 +123,7 @@ def main():
 	try:
 		reader.start()
 		# measure frequency every second
-		interval = 1.0
+		interval = 2.0
 		while True:
 			time.sleep(interval)
 			count = reader.get_count_and_reset()
