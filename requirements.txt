@@ -2,3 +2,4 @@ pyserial==3.5
 adafruit-circuitpython-bno055
 adafruit-blinka
 RPi.GPIO
+spidev
