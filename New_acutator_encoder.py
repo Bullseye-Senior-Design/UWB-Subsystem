@@ -6,9 +6,9 @@ import RPi.GPIO as GPIO
 import time
 
 # ================== PIN ASSIGNMENTS (BCM numbering) ==================
-CS_PIN   = 22   # Change if you used a different pin
-CLK_PIN  = 17
-DATA_PIN = 27
+CS_PIN   = 8   # Change if you used a different pin
+CLK_PIN  = 11
+DATA_PIN = 9
 
 # ====================================================================
 GPIO.setmode(GPIO.BCM)
@@ -47,7 +47,7 @@ def read_encoder():
     rx = [0] * 10
 
     GPIO.output(CS_PIN, GPIO.LOW)
-    time.sleep(0.00001)          # 10 µs minimum after /SS low
+    time.sleep(0.01)          # 10 µs minimum after /SS low
 
     rx[0] = spi_byte(0xAA)
     for i in range(1, 10):
