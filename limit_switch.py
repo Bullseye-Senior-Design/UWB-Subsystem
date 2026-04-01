@@ -1,27 +1,3 @@
-#!/usr/bin/env python3
-"""
-ProximitySensor.py
-
-Reads a digital GPIO pin from a TAISS M12 4mm 5V DC proximity sensor.
-
-Features:
-- Works on Raspberry Pi using RPi.GPIO (BCM numbering)
-
-Important hardware notes:
-- Raspberry Pi GPIOs are NOT 5V tolerant. Do NOT connect the sensor output directly to
-  a Pi GPIO if the sensor drives 5V. Use an appropriate level shifter, an open-collector
-  sensor output with a 3.3V pull-up, or a simple voltage divider (when safe) to convert
-  the output to 3.3V logic.
-- Many proximity sensors offer NPN (open-collector) or PNP outputs. For NPN (open-collector)
-  you can pull the line up to 3.3V on the Pi. For PNP or push-pull outputs, ensure the output
-  doesn't drive 5V into the GPIO.
-
-Wiring example (NPN open-collector preferred):
-  Sensor V+ -> 5V
-  Sensor GND -> Pi GND
-  Sensor output -> Pi GPIO input pin with internal pull-up disabled and external 3.3V pull-up
-  (or use Pi internal pull-up if the sensor is open-collector and output will never drive 5V)
-"""
 
 import time
 import threading
@@ -33,10 +9,10 @@ logging.basicConfig(level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %
 
 import RPi.GPIO as GPIO
 
-class ProximitySensorReader:
+class LimitSwitchReader:
 	def __init__(self, pin: int, active_high: bool = True, pull_up: bool = True, debounce_ms: int = 50,
 				 edge: str = 'both'):
-		"""Create a proximity sensor reader.
+		"""Create a gpio pin reader.
 
 		Args:
 			pin: BCM GPIO pin number to read (e.g., 17)
@@ -53,10 +29,19 @@ class ProximitySensorReader:
 
 		self._running = False
 		self._lock = threading.Lock()
+		self.state = False  # True after rising edge, False after falling edge
 
 	def _gpio_callback(self, channel):
-		# Keep callback extremely small: increment count only.
-		logger.debug(f"GPIO callback triggered on pin {channel}")
+		# Read the current pin state to determine edge direction
+		current_value = GPIO.input(channel)
+		
+		# Set state based on edge detection
+		# If current value is HIGH, it was a rising edge -> state = True
+		# If current value is LOW, it was a falling edge -> state = False
+		with self._lock:
+			self.state = bool(current_value)
+		
+		logger.debug(f"GPIO callback triggered on pin {channel}, state={self.state}")
 
 	def start(self):
 		"""Start monitoring the GPIO pin"""
@@ -80,6 +65,11 @@ class ProximitySensorReader:
 		GPIO.add_event_detect(self.pin, gedge, callback=self._gpio_callback, bouncetime=self.debounce_ms)
 		logger.info(f"Started monitoring GPIO {self.pin} (active_high={self.active_high})")
 
+	def get_state(self):
+		"""Get the current edge state (True=rising edge occurred, False=falling edge occurred)"""
+		with self._lock:
+			return self.state
+
 	def stop(self):
 		"""Stop monitoring and cleanup"""
 		self._running = False
@@ -97,17 +87,20 @@ class ProximitySensorReader:
 
 def main():
 
-	reader = ProximitySensorReader(pin=4,
+	reader = LimitSwitchReader(pin=4,
 								   active_high=True,
 								   pull_up=True,
 								   debounce_ms=1,
-								   edge='rising')
+								   edge='both')  # Changed to 'both' to detect both edges
 	try:
 		reader.start()
 		# measure frequency every second
 		interval = 2.0
 		while True:
 			time.sleep(interval)
+			# Read and display the current state
+			current_state = reader.get_state()
+			logger.info(f"Current state: {current_state} ({'RISING edge' if current_state else 'FALLING edge'})")
 
 	except KeyboardInterrupt:
 		logger.info("Interrupted by user")
