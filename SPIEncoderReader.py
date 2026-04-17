@@ -109,7 +109,9 @@ class SPIEncoderReader:
 				bytes_to_read = 2
 			
 			# Read data from encoder
-			data = self._spi.readbytes(bytes_to_read)
+			data = self._spi.xfer2([0x00]*bytes_to_read)
+
+			logger.info(f"Raw SPI data: {data}")
 			
 			# Parse position based on resolution
 			# For 12-bit encoder in 2 bytes: MSB first
@@ -240,7 +242,7 @@ def main():
 	reader = SPIEncoderReader(
 		bus=0,              # SPI bus 0
 		device=0,           # CE0 (chip select 0)
-		max_speed_hz=1667,  # 0.6ms
+		max_speed_hz=1000000,  # 0.6ms
 		spi_mode=0,         # SPI mode 0 (check encoder datasheet)
 		bits_per_word=8,
 		resolution=14       # 14-bit encoder (16384 positions)
